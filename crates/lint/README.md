@@ -31,6 +31,7 @@ It helps enforce best practices and improve code quality within Foundry projects
   - `unaliased-plain-import`: Use named imports `{A, B}` or alias `import ".." as X`.
   - `named-struct-fields`: Prefer initializing structs with named fields.
   - `unsafe-cheatcode`: Usage of unsafe cheatcodes that can perform dangerous operations.
+  - `pragma-inconsistent`: Flags projects whose source files declare different Solidity pragma version requirements.
 - **Gas Optimizations:**
   - `asm-keccak256`: Recommends using inline assembly for `keccak256` for potential gas savings.
   - `could-be-immutable`: Recommends declaring constructor-only state variables as `immutable`.
