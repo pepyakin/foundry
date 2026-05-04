@@ -1,0 +1,27 @@
+[package]
+name = "forge-doc-solar"
+description = "Solidity documentation generator powered by solar (vocs output)"
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+solar.workspace = true
+
+foundry-compilers.workspace = true
+foundry-config.workspace = true
+
+alloy-primitives.workspace = true
+eyre.workspace = true
+rayon.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tracing.workspace = true

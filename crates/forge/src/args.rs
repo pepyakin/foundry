@@ -131,6 +131,14 @@ pub fn run_command(args: Forge) -> Result<()> {
                 Ok(())
             }
         }
+        ForgeSubcommand::DocSolar(cmd) => {
+            if cmd.is_watch() {
+                global.block_on(watch::watch_doc_solar(cmd))
+            } else {
+                global.block_on(cmd.run())?;
+                Ok(())
+            }
+        }
         ForgeSubcommand::Selectors { command } => global.block_on(command.run()),
         ForgeSubcommand::Generate(cmd) => match cmd.sub {
             GenerateSubcommands::Test(cmd) => cmd.run(),

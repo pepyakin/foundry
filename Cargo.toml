@@ -14,6 +14,7 @@ members = [
     "crates/config/",
     "crates/debugger/",
     "crates/doc/",
+    "crates/doc-solar/",
     "crates/evm/core/",
     "crates/evm/coverage/",
     "crates/evm/evm/",
@@ -310,6 +311,7 @@ chisel = { path = "crates/chisel" }
 forge = { path = "crates/forge" }
 
 forge-doc = { path = "crates/doc" }
+forge-doc-solar = { path = "crates/doc-solar" }
 forge-fmt = { path = "crates/fmt" }
 forge-lint = { path = "crates/lint" }
 forge-verify = { path = "crates/verify" }

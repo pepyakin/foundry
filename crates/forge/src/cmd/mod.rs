@@ -15,6 +15,7 @@ pub mod config;
 pub mod coverage;
 pub mod create;
 pub mod doc;
+pub mod doc_solar;
 pub mod eip712;
 pub mod flatten;
 pub mod fmt;

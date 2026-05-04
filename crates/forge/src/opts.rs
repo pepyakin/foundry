@@ -1,9 +1,9 @@
 use crate::cmd::{
     bind::BindArgs, bind_json, build::BuildArgs, cache::CacheArgs, clone::CloneArgs,
-    compiler::CompilerArgs, config, coverage, create::CreateArgs, doc::DocArgs, eip712, flatten,
-    fmt::FmtArgs, geiger, generate, init::InitArgs, inspect, install::InstallArgs, lint::LintArgs,
-    remappings::RemappingArgs, remove::RemoveArgs, selectors::SelectorsSubcommands, snapshot,
-    soldeer, test, tree, update,
+    compiler::CompilerArgs, config, coverage, create::CreateArgs, doc::DocArgs,
+    doc_solar::DocSolarArgs, eip712, flatten, fmt::FmtArgs, geiger, generate, init::InitArgs,
+    inspect, install::InstallArgs, lint::LintArgs, remappings::RemappingArgs, remove::RemoveArgs,
+    selectors::SelectorsSubcommands, snapshot, soldeer, test, tree, update,
 };
 use clap::{Parser, Subcommand, ValueHint};
 use forge_script::ScriptArgs;
@@ -147,6 +147,14 @@ pub enum ForgeSubcommand {
 
     /// Generate documentation for the project.
     Doc(DocArgs),
+
+    /// Generate documentation for the project (solar-based, vocs output).
+    ///
+    /// EXPERIMENTAL: this is a from-scratch rewrite of `forge doc` powered
+    /// by the `solar` Solidity compiler frontend, emitting a
+    /// [vocs](https://vocs.dev/docs) site instead of an mdBook.
+    #[command(name = "doc-solar")]
+    DocSolar(DocSolarArgs),
 
     /// Function selector utilities.
     #[command(visible_alias = "se")]

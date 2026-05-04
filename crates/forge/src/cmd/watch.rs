@@ -1,5 +1,5 @@
 use super::{
-    build::BuildArgs, coverage::CoverageArgs, doc::DocArgs, fmt::FmtArgs,
+    build::BuildArgs, coverage::CoverageArgs, doc::DocArgs, doc_solar::DocSolarArgs, fmt::FmtArgs,
     snapshot::GasSnapshotArgs, test::TestArgs,
 };
 use alloy_primitives::map::HashSet;
@@ -386,6 +386,16 @@ pub async fn watch_fmt(args: FmtArgs) -> Result<()> {
 
 /// Executes a [`Watchexec`] that listens for changes in the project's sources directory
 pub async fn watch_doc(args: DocArgs) -> Result<()> {
+    let config = args.watch.watchexec_config(|| {
+        let config = args.config()?;
+        Ok([config.src])
+    })?;
+    run(config).await
+}
+
+/// Executes a [`Watchexec`] that listens for changes in the project's sources directory and
+/// re-runs `forge doc-solar`.
+pub async fn watch_doc_solar(args: DocSolarArgs) -> Result<()> {
     let config = args.watch.watchexec_config(|| {
         let config = args.config()?;
         Ok([config.src])
