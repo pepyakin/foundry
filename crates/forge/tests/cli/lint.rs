@@ -1306,3 +1306,287 @@ note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other versio
 "#]
     ]);
 });
+
+// Multiple files all using the exact same pragma must NOT warn.
+forgetest!(pragma_inconsistent_consistent_exact_no_warning, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract B {}\n",
+    );
+    prj.add_source(
+        "C",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract C {}\n",
+    );
+
+    cmd.arg("lint")
+        .args(["--only-lint", "pragma-inconsistent"])
+        .assert_success()
+        .stderr_eq(str![[r#""#]]);
+});
+
+// Multiple files all using the exact same caret pragma must NOT warn.
+forgetest!(pragma_inconsistent_consistent_caret_no_warning, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract B {}\n",
+    );
+
+    cmd.arg("lint")
+        .args(["--only-lint", "pragma-inconsistent"])
+        .assert_success()
+        .stderr_eq(str![[r#""#]]);
+});
+
+// A single file in the project cannot conflict with itself.
+forgetest!(pragma_inconsistent_single_file_no_warning, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract A {}\n",
+    );
+
+    cmd.arg("lint")
+        .args(["--only-lint", "pragma-inconsistent"])
+        .assert_success()
+        .stderr_eq(str![[r#""#]]);
+});
+
+// Caret vs tilde (different operators around the same base version) must warn.
+forgetest!(pragma_inconsistent_caret_vs_tilde, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity ~0.8.20;\ncontract B {}\n",
+    );
+
+    cmd.arg("lint").args(["--only-lint", "pragma-inconsistent"]).assert_success().stderr_eq(str![
+        [r#"
+note[pragma-inconsistent]: 'pragma solidity ^0.8.20;' conflicts with other version requirements in the project: ~0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity ^0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity ~0.8.20;' conflicts with other version requirements in the project: ^0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity ~0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+
+"#]
+    ]);
+});
+
+// Range expression (`>=A <B`) vs exact must warn even when the exact version satisfies the range.
+forgetest!(pragma_inconsistent_range_vs_exact, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity >=0.8.0 <0.9.0;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract B {}\n",
+    );
+
+    cmd.arg("lint").args(["--only-lint", "pragma-inconsistent"]).assert_success().stderr_eq(str![
+        [r#"
+note[pragma-inconsistent]: 'pragma solidity >=0.8.0 <0.9.0;' conflicts with other version requirements in the project: 0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity >=0.8.0 <0.9.0;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other version requirements in the project: >=0.8.0 <0.9.0
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+
+"#]
+    ]);
+});
+
+// `||` (or) expression vs exact must warn.
+forgetest!(pragma_inconsistent_or_vs_exact, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20 || 0.8.21;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract B {}\n",
+    );
+
+    cmd.arg("lint").args(["--only-lint", "pragma-inconsistent"]).assert_success().stderr_eq(str![
+        [r#"
+note[pragma-inconsistent]: 'pragma solidity 0.8.20 || 0.8.21;' conflicts with other version requirements in the project: 0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20 || 0.8.21;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other version requirements in the project: 0.8.20 || 0.8.21
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+
+"#]
+    ]);
+});
+
+// Three distinct requirements: every emit lists the other two as conflicting.
+forgetest!(pragma_inconsistent_three_distinct, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract B {}\n",
+    );
+    prj.add_source(
+        "C",
+        "// SPDX-License-Identifier: MIT\npragma solidity ~0.8.20;\ncontract C {}\n",
+    );
+
+    cmd.arg("lint").args(["--only-lint", "pragma-inconsistent"]).assert_success().stderr_eq(str![
+        [r#"
+note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other version requirements in the project: ^0.8.20, ~0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity ^0.8.20;' conflicts with other version requirements in the project: 0.8.20, ~0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity ^0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity ~0.8.20;' conflicts with other version requirements in the project: 0.8.20, ^0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity ~0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+
+"#]
+    ]);
+});
+
+// Even files that share a requirement still emit when ANY other variant exists.
+// Two files with `0.8.20` plus one file with `^0.8.20` => 3 emits total.
+forgetest!(pragma_inconsistent_duplicates_among_conflict, |prj, cmd| {
+    prj.add_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract A {}\n",
+    );
+    prj.add_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract B {}\n",
+    );
+    prj.add_source(
+        "C",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract C {}\n",
+    );
+
+    cmd.arg("lint").args(["--only-lint", "pragma-inconsistent"]).assert_success().stderr_eq(str![
+        [r#"
+note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other version requirements in the project: ^0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other version requirements in the project: ^0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity ^0.8.20;' conflicts with other version requirements in the project: 0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity ^0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+
+"#]
+    ]);
+});
+
+// Files without a `pragma solidity` directive must not affect the conflict computation.
+// Note: `add_raw_source` is used here to bypass the helper that would otherwise inject a default
+// `pragma solidity =<SOLC_VERSION>;` for files that omit one.
+forgetest!(pragma_inconsistent_files_without_pragma, |prj, cmd| {
+    prj.add_raw_source(
+        "A",
+        "// SPDX-License-Identifier: MIT\npragma solidity 0.8.20;\ncontract A {}\n",
+    );
+    prj.add_raw_source(
+        "B",
+        "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract B {}\n",
+    );
+    // C has no pragma at all; should be ignored by the cross-file check.
+    prj.add_raw_source("C", "// SPDX-License-Identifier: MIT\ncontract C {}\n");
+
+    cmd.arg("lint").args(["--only-lint", "pragma-inconsistent"]).assert_success().stderr_eq(str![
+        [r#"
+note[pragma-inconsistent]: 'pragma solidity 0.8.20;' conflicts with other version requirements in the project: ^0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity 0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+note[pragma-inconsistent]: 'pragma solidity ^0.8.20;' conflicts with other version requirements in the project: 0.8.20
+  [FILE]:2:1
+  │
+2 │ pragma solidity ^0.8.20;
+  │ ━━━━━━━━━━━━━━━━━━━━━━━━
+  │
+  ╰ help: https://book.getfoundry.sh/reference/forge/forge-lint#pragma-inconsistent
+
+
+"#]
+    ]);
+});
